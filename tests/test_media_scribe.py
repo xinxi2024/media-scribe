@@ -71,7 +71,7 @@ def test_long_file_uses_batch_with_timestamps(tmp_path, monkeypatch):
     model = object()
     monkeypatch.setattr(ms, "get_model", lambda _size: model)
     monkeypatch.setattr(ms, "media_duration", lambda _source: 90)
-    monkeypatch.setattr(faster_whisper, "BatchedInferencePipeline", Pipeline)
+    monkeypatch.setattr(faster_whisper, "BatchedInferencePipeline", Pipeline, raising=False)
     ms.transcribe(source, "small", "zh")
     assert seen["model"] is model
     assert seen["batch_size"] == 8

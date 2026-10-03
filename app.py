@@ -44,4 +44,4 @@ with gr.Blocks(title="声刻 · 音视频转文字", css=CSS, theme=gr.themes.So
     gr.Markdown("本地运行 · 首次转写需要联网下载模型 · 请核对专有名词和重要数字")
 
 if __name__ == "__main__":
-    demo.queue().launch(server_name="127.0.0.1", inbrowser=True)
+    demo.queue().launch(server_name="127.0.0.1", server_port=7860, inbrowser=True)

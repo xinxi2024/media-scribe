@@ -103,12 +103,17 @@ def transcribe(source: Path, model_size: str, language: str | None,
     if model_size in {"tiny", "base"}:
         # Skip costly fallback retries in the speed-focused profiles.
         options["temperature"] = 0.0
+    pipeline_class = None
     if media_duration(source) >= BATCH_THRESHOLD_SECONDS:
-        from faster_whisper import BatchedInferencePipeline
-
+        try:
+            from faster_whisper import BatchedInferencePipeline as pipeline_class
+        except ImportError:
+            # Older installations still support normal transcription.
+            pass
+    if pipeline_class is not None:
         if progress:
             progress("正在批量识别语音…")
-        pipeline = BatchedInferencePipeline(model=model)
+        pipeline = pipeline_class(model=model)
         segments, _info = pipeline.transcribe(
             str(source), batch_size=4 if model_size == "medium" else 8,
             without_timestamps=False, **options,
