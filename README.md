@@ -37,7 +37,7 @@
 
 ## 云端架构与免费额度
 
-仓库已提供 `Dockerfile` 和 `requirements-cloud.txt`。云端模式在服务器上用 FFmpeg 提取音轨，再将音频交给 Groq 识别；浏览器仅上传文件、显示和下载结果。`GROQ_API_KEY` 只从服务端环境变量读取，不会写入网页代码。公网启动还要求设置 `MEDIA_SCRIBE_PASSWORD`，供个人登录使用。
+仓库已提供 `Dockerfile`、`requirements-cloud.txt` 和 Render Blueprint 文件 `render.yaml`。云端模式在服务器上用 FFmpeg 提取音轨，再将音频交给 Groq 识别；浏览器仅上传文件、显示和下载结果。`GROQ_API_KEY` 只从服务端环境变量读取，不会写入网页代码。公网启动还要求设置 `MEDIA_SCRIBE_PASSWORD`，供个人登录使用。
 
 Groq 免费计划目前允许单次上传最多 **25 MB**，语音识别也有请求次数与音频时长限额；本站把音轨转成 16 kHz 单声道 FLAC、按约 5 分钟切分，片段过大时再压缩。云端处理意味着录音会交给 Groq，隐私敏感内容应先确认是否适合上传。[文件格式与限制](https://console.groq.com/docs/speech-to-text)、[免费计划速率限制](https://console.groq.com/docs/rate-limits)。
 
@@ -54,7 +54,14 @@ Groq 免费计划目前允许单次上传最多 **25 MB**，语音识别也有�
 
 ## 云端部署准备
 
-可将本仓库的 Docker 镜像部署到支持容器的外网服务。环境变量：
+可通过 Render Blueprint 部署：
+
+1. 在 [Groq Console](https://console.groq.com/keys) 创建 API 密钥。如果密钥曾被贴到聊天、截图或公开位置，请先在 Groq 后台撤销并重建。
+2. 在 [Render Dashboard](https://dashboard.render.com/) 选择 **New → Blueprint**，连接公开仓库 `xinxi2024/media-scribe`，使用仓库根目录的 `render.yaml`。
+3. 在创建页面填写 `GROQ_API_KEY` 和自选的强 `MEDIA_SCRIBE_PASSWORD`。两者只保存在 Render 环境变量中；不要填进仓库文件或发到聊天中。
+4. 等待部署成功，打开 Render 给出的实际 `onrender.com` 地址，以用户名 `owner` 和你设置的密码登录。将这个真实地址填入本 README 顶部的“公网网站”栏。
+
+环境变量：
 
 | 名称 | 用途 |
 | --- | --- |
@@ -64,7 +71,7 @@ Groq 免费计划目前允许单次上传最多 **25 MB**，语音识别也有�
 | `GROQ_API_KEY` | Groq API 密钥，仅配置在托管平台的密钥设置中 |
 | `MEDIA_SCRIBE_PASSWORD` | 个人访问密码，公网模式必须配置 |
 
-部署前需要有相应托管平台账号和 Groq 账号，并在平台后台设置密钥；**不要把密钥提交到 GitHub**。容器默认使用云端模式。虽然可以在 Render 免费层启动，但它的冷启动不满足目前的性能门槛，本项目暂未将其标记为正式公网部署。
+容器默认使用云端模式。Render 免费层空闲后会休眠，因此部署成功也不等于达到“上传、识别、下载总耗时不弱于本地”的目标；应按上节分别测冷启动与热启动后再判断。
 
 ## 本地开发与验证
 
