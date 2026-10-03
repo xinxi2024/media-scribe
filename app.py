@@ -29,8 +29,8 @@ with gr.Blocks(title="声刻 · 音视频转文字", css=CSS, theme=gr.themes.So
             mode = gr.Radio(["视频转音频", "视频转文字", "音频转文字"],
                             value="视频转文字", label="处理方式")
             with gr.Accordion("识别设置", open=False):
-                model = gr.Dropdown(list(MODELS), value="均衡 · small", label="模型精度",
-                                    info="越准确通常越慢；只提取音频时无需设置")
+                model = gr.Dropdown(list(MODELS), value="快速 · base", label="速度与精度",
+                                    info="极速更快但错字可能更多；只提取音频时无需设置")
                 language = gr.Dropdown(list(LANGUAGES), value="自动检测", label="语音语言",
                                        info="知道语言时手动选择通常更稳定")
             button = gr.Button("开始处理", variant="primary")

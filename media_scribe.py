@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import tempfile
@@ -15,7 +16,14 @@ import imageio_ffmpeg
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v"}
 AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".flac", ".ogg", ".aac", ".wma"}
 MODES = {"视频转音频", "视频转文字", "音频转文字"}
-MODELS = {"快速 · base": "base", "均衡 · small": "small", "准确 · medium": "medium"}
+MODELS = {
+    "极速 · tiny": "tiny",
+    "快速 · base": "base",
+    "均衡 · small": "small",
+    "准确 · medium": "medium",
+}
+BEAM_SIZES = {"tiny": 1, "base": 1, "small": 3, "medium": 5}
+BATCH_THRESHOLD_SECONDS = 60
 LANGUAGES = {"自动检测": None, "中文": "zh", "English": "en", "日本語": "ja", "한국어": "ko"}
 
 
@@ -69,8 +77,20 @@ def srt_timestamp(seconds: float) -> str:
 def get_model(size: str):
     from faster_whisper import WhisperModel
 
-    # int8 works on ordinary CPUs. A GPU-specific setup can be added later.
-    return WhisperModel(size, device="cpu", compute_type="int8")
+    # Keep CPU inference predictable on machines without a working CUDA runtime.
+    return WhisperModel(size, device="cpu", compute_type="int8",
+                        cpu_threads=min(8, os.cpu_count() or 4))
+
+
+def media_duration(source: Path) -> float:
+    """Return container duration in seconds; unknown duration uses normal decoding."""
+    import av
+
+    try:
+        with av.open(str(source)) as container:
+            return float(container.duration / av.time_base) if container.duration else 0.0
+    except (av.AVError, OSError):
+        return 0.0
 
 
 def transcribe(source: Path, model_size: str, language: str | None,
@@ -78,12 +98,25 @@ def transcribe(source: Path, model_size: str, language: str | None,
     if progress:
         progress("正在加载识别模型（首次使用会下载模型）…")
     model = get_model(model_size)
-    if progress:
-        progress("正在识别语音…")
-    segments, _info = model.transcribe(
-        str(source), language=language, beam_size=5, vad_filter=True,
-        condition_on_previous_text=False,
-    )
+    options = dict(language=language, beam_size=BEAM_SIZES[model_size],
+                   vad_filter=True, condition_on_previous_text=False)
+    if model_size in {"tiny", "base"}:
+        # Skip costly fallback retries in the speed-focused profiles.
+        options["temperature"] = 0.0
+    if media_duration(source) >= BATCH_THRESHOLD_SECONDS:
+        from faster_whisper import BatchedInferencePipeline
+
+        if progress:
+            progress("正在批量识别语音…")
+        pipeline = BatchedInferencePipeline(model=model)
+        segments, _info = pipeline.transcribe(
+            str(source), batch_size=4 if model_size == "medium" else 8,
+            without_timestamps=False, **options,
+        )
+    else:
+        if progress:
+            progress("正在识别语音…")
+        segments, _info = model.transcribe(str(source), **options)
     items = [
         {"start": segment.start, "end": segment.end, "text": segment.text.strip()}
         for segment in segments if segment.text.strip()

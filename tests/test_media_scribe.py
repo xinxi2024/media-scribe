@@ -34,3 +34,47 @@ def test_process_with_stubbed_transcriber(tmp_path, monkeypatch):
     assert text == "测试内容"
     assert len(files) == 3
     assert all(Path(path).is_file() for path in files)
+
+
+def test_fast_profile_skips_fallback(tmp_path, monkeypatch):
+    source = tmp_path / "voice.wav"
+    source.write_bytes(b"test")
+    seen = {}
+
+    class Model:
+        def transcribe(self, _source, **options):
+            seen.update(options)
+            return iter([]), None
+
+    monkeypatch.setattr(ms, "get_model", lambda _size: Model())
+    monkeypatch.setattr(ms, "media_duration", lambda _source: 3)
+    ms.transcribe(source, "base", "zh")
+    assert seen["beam_size"] == 1
+    assert seen["temperature"] == 0.0
+
+
+def test_long_file_uses_batch_with_timestamps(tmp_path, monkeypatch):
+    import faster_whisper
+
+    source = tmp_path / "long.wav"
+    source.write_bytes(b"test")
+    seen = {}
+
+    class Pipeline:
+        def __init__(self, model):
+            seen["model"] = model
+
+        def transcribe(self, _source, **options):
+            seen.update(options)
+            return iter([]), None
+
+    model = object()
+    monkeypatch.setattr(ms, "get_model", lambda _size: model)
+    monkeypatch.setattr(ms, "media_duration", lambda _source: 90)
+    monkeypatch.setattr(faster_whisper, "BatchedInferencePipeline", Pipeline)
+    ms.transcribe(source, "small", "zh")
+    assert seen["model"] is model
+    assert seen["batch_size"] == 8
+    assert seen["without_timestamps"] is False
+    assert seen["beam_size"] == 3
+    assert "temperature" not in seen
