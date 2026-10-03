@@ -5,12 +5,12 @@
 | 地址 | 状态 |
 | --- | --- |
 | GitHub 源码 | [github.com/xinxi2024/media-scribe](https://github.com/xinxi2024/media-scribe) |
-| 公网网站 | **尚未上线**。免费服务的端到端速度尚未验证达到要求，验证后会在此填写真实网址。 |
+| 公网网站 | [https://media-scribe.onrender.com](https://media-scribe.onrender.com)，以 `owner` 和部署时设置的密码登录。已在 Render 免费实例上线；端到端速度尚未达到可保证不弱于本地的验证标准。 |
 | 开发预览 | [http://127.0.0.1:7860](http://127.0.0.1:7860)，仅在本机启动时可用，**不是公网地址**。 |
 
 [在 Render 免费套餐部署此仓库](https://render.com/deploy?repo=https://github.com/xinxi2024/media-scribe)
 
-> 目标是把计算放在外网服务器，不消耗用户电脑的识别算力；同时保持免费，并尽量使上传、处理、下载的总耗时不慢于本地版。公网部署需要真实网络与账号环境的基准测试，当前尚不能保证这一点。
+> 网站的音轨提取在 Render、转写在 Groq 完成，不使用用户电脑的识别算力。免费服务已上线；上传、处理、下载总耗时是否快于本地版仍取决于文件、网络和冷启动，当前无法保证。
 
 ## 功能
 
@@ -50,9 +50,9 @@ Groq 免费计划目前允许单次上传最多 **25 MB**，语音识别也有�
 - [Netlify Functions](https://docs.netlify.com/build/functions/usage-and-billing/) 免费层有固定额度，默认函数内存为 1 GB，不适合直接在函数内装载本地 Whisper 模型。
 - [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/platform/pricing/) 有每日免费推理额度，但免费 Worker 的 [CPU 时间限制](https://developers.cloudflare.com/workers/platform/pricing/) 不适合在请求里用 FFmpeg 做视频提取。
 
-**部署门槛**：需要用同一个代表性音频、视频文件分别测本地与公网网站的“上传开始到下载完成”，包括冷启动和热启动；在实际免费额度内确认可用。网络上行速度与服务器所在地区会影响总耗时，因此无法对所有文件保证云端都比本地快。目前没有经过这个验证的公网网址。
+**性能验证**：需要用同一个代表性音频、视频文件分别测本地与公网网站的“上传开始到下载完成”，包括冷启动和热启动；在实际免费额度内确认可用。网络上行速度与服务器所在地区会影响总耗时，因此无法对所有文件保证云端都比本地快。当前公网地址已能响应并显示登录页，完整转写和性能比较尚待实测。
 
-仓库里的 `scripts/benchmark.py` 会测一次上传、处理、下载总耗时。部署后可分别运行 `python scripts/benchmark.py http://127.0.0.1:7860 样本.wav` 和 `python scripts/benchmark.py https://你的公网域名 样本.wav --model "快速 · Groq Turbo"` 对照。公网访问密码从 `MEDIA_SCRIBE_PASSWORD` 环境变量读取，不放在命令行里。
+仓库里的 `scripts/benchmark.py` 会测一次上传、处理、下载总耗时。可分别运行 `python scripts/benchmark.py http://127.0.0.1:7860 样本.wav` 和 `python scripts/benchmark.py https://media-scribe.onrender.com 样本.wav --model "快速 · Groq Turbo"` 对照。公网访问密码从 `MEDIA_SCRIBE_PASSWORD` 环境变量读取，不放在命令行里。
 
 ## 云端部署准备
 
@@ -61,7 +61,7 @@ Groq 免费计划目前允许单次上传最多 **25 MB**，语音识别也有�
 1. 在 [Groq Console](https://console.groq.com/keys) 创建 API 密钥。如果密钥曾被贴到聊天、截图或公开位置，请先在 Groq 后台撤销并重建。
 2. 点击上方部署链接，或在 [Render Dashboard](https://dashboard.render.com/) 选择 **New → Blueprint**，连接公开仓库 `xinxi2024/media-scribe`，使用仓库根目录的 `render.yaml`。
 3. 在创建页面填写 `GROQ_API_KEY` 和自选的强 `MEDIA_SCRIBE_PASSWORD`。两者只保存在 Render 环境变量中；不要填进仓库文件或发到聊天中。
-4. 等待部署成功，打开 Render 给出的实际 `onrender.com` 地址，以用户名 `owner` 和你设置的密码登录。将这个真实地址填入本 README 顶部的“公网网站”栏。
+4. 等待部署成功，打开上方“公网网站”地址，以用户名 `owner` 和你设置的密码登录。
 
 环境变量：
 
