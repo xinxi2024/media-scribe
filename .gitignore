@@ -19,4 +19,5 @@ outputs/
 *.srt
 *.txt
 !requirements.txt
+!requirements-cloud.txt
 !LICENSE

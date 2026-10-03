@@ -1,6 +1,8 @@
 import json
+import subprocess
 from pathlib import Path
 
+import imageio_ffmpeg
 import pytest
 
 import media_scribe as ms
@@ -26,7 +28,7 @@ def test_process_with_stubbed_transcriber(tmp_path, monkeypatch):
     audio.write_bytes(b"test")
     monkeypatch.setattr(ms, "new_output_dir", lambda: tmp_path / "result")
     (tmp_path / "result").mkdir()
-    monkeypatch.setattr(ms, "transcribe", lambda *_args: (
+    monkeypatch.setattr(ms, "transcribe", lambda *_args, **_kwargs: (
         "测试内容", [{"start": 0.0, "end": 1.0, "text": "测试内容"}]
     ))
     status, text, files = ms.process(str(audio), "音频转文字", "均衡 · small", "中文")
@@ -78,3 +80,16 @@ def test_long_file_uses_batch_with_timestamps(tmp_path, monkeypatch):
     assert seen["without_timestamps"] is False
     assert seen["beam_size"] == 3
     assert "temperature" not in seen
+
+
+def test_original_audio_export_copies_codec(tmp_path):
+    video = tmp_path / "sample.mp4"
+    subprocess.run([
+        imageio_ffmpeg.get_ffmpeg_exe(), "-hide_banner", "-loglevel", "error",
+        "-f", "lavfi", "-i", "color=c=black:s=160x120:r=10",
+        "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=44100",
+        "-t", "1", "-c:v", "mpeg4", "-c:a", "aac", str(video),
+    ], check=True)
+    audio = ms.extract_audio(video, tmp_path, "sample", "copy")
+    assert audio.suffix == ".m4a"
+    assert audio.stat().st_size > 0
