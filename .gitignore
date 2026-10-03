@@ -20,4 +20,3 @@ outputs/
 *.txt
 !requirements.txt
 !LICENSE
-
