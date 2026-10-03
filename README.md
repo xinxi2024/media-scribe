@@ -8,6 +8,8 @@
 | 公网网站 | **尚未上线**。免费服务的端到端速度尚未验证达到要求，验证后会在此填写真实网址。 |
 | 开发预览 | [http://127.0.0.1:7860](http://127.0.0.1:7860)，仅在本机启动时可用，**不是公网地址**。 |
 
+[在 Render 免费套餐部署此仓库](https://render.com/deploy?repo=https://github.com/xinxi2024/media-scribe)
+
 > 目标是把计算放在外网服务器，不消耗用户电脑的识别算力；同时保持免费，并尽量使上传、处理、下载的总耗时不慢于本地版。公网部署需要真实网络与账号环境的基准测试，当前尚不能保证这一点。
 
 ## 功能
@@ -57,7 +59,7 @@ Groq 免费计划目前允许单次上传最多 **25 MB**，语音识别也有�
 可通过 Render Blueprint 部署：
 
 1. 在 [Groq Console](https://console.groq.com/keys) 创建 API 密钥。如果密钥曾被贴到聊天、截图或公开位置，请先在 Groq 后台撤销并重建。
-2. 在 [Render Dashboard](https://dashboard.render.com/) 选择 **New → Blueprint**，连接公开仓库 `xinxi2024/media-scribe`，使用仓库根目录的 `render.yaml`。
+2. 点击上方部署链接，或在 [Render Dashboard](https://dashboard.render.com/) 选择 **New → Blueprint**，连接公开仓库 `xinxi2024/media-scribe`，使用仓库根目录的 `render.yaml`。
 3. 在创建页面填写 `GROQ_API_KEY` 和自选的强 `MEDIA_SCRIBE_PASSWORD`。两者只保存在 Render 环境变量中；不要填进仓库文件或发到聊天中。
 4. 等待部署成功，打开 Render 给出的实际 `onrender.com` 地址，以用户名 `owner` 和你设置的密码登录。将这个真实地址填入本 README 顶部的“公网网站”栏。
 
